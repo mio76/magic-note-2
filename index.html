@@ -8,14 +8,18 @@
 <link rel="manifest" href="manifest.json">
 
   <style>
-    body {
-      margin: 0;
-      padding: 0;
+     * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+}
+
+    body {      
       background: url('back.jpg') no-repeat center center fixed;
       background-size: cover;
-      font-family: sans-serif;
       overflow-x: hidden;
-      background-color: #280A80;
+      background-color: #361770;
     }
 
     :root {
@@ -32,7 +36,7 @@
       box-sizing: border-box;
       color: white;
       position: relative;
-      padding: 15px;
+      padding: 8px;
     }
 
     textarea {
@@ -42,15 +46,15 @@
       border: none;
       color: white;
       resize: none;
-      font-size: 24px;
+      font-size: 22px;
       outline: none;
       border-radius: var(--br);
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
 
        overflow: hidden; /* 🚫 Відключаємо прокручування за замовчуванням */
-  resize: none;
-  transition: all 0.3s ease;
+       resize: none;
+       transition: all 0.3s ease;
     }
 
     textarea:focus {
@@ -163,13 +167,13 @@
 
       const backupBtn = document.createElement('div');
       backupBtn.className = 'btn';
-      backupBtn.innerText = '📥';
+      backupBtn.innerText = '📤';
       backupBtn.title = 'Зберегти в JSON';
       backupBtn.onclick = backupToJSON;
 
       const restoreBtn = document.createElement('div');
       restoreBtn.className = 'btn';
-      restoreBtn.innerText = '📤';
+      restoreBtn.innerText = '📥';
       restoreBtn.title = 'Відновити з JSON';
       restoreBtn.onclick = () => document.getElementById('restoreFile').click();
 
