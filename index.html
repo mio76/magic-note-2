@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magic Note-2</title>
+  
+<link rel="manifest" href="manifest.json">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('back.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: sans-serif;
+      overflow-x: hidden;
+      background-color: #280A80;
+    }
+
+    :root {
+      --br: 8px;
+    }
+
+    .note {
+      width: 90%;
+      max-width: 600px;
+      margin: 20px auto 60px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      box-sizing: border-box;
+      color: white;
+      position: relative;
+      padding: 15px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      background: transparent;
+      border: none;
+      color: white;
+      resize: none;
+      font-size: 24px;
+      outline: none;
+      border-radius: var(--br);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+
+       overflow: hidden; /* 🚫 Відключаємо прокручування за замовчуванням */
+  resize: none;
+  transition: all 0.3s ease;
+    }
+
+    textarea:focus {
+  overflow: auto; /* ✅ Включаємо прокручування під час редагування */
+}
+
+    textarea:hover{
+       height: 300px; 
+    }
+
+    .note-buttons {
+      position: absolute;
+      right: 20px;
+      bottom: -40px;
+      display: flex;
+      gap: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 25px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .btn {
+      width: 35px;
+      height: 35px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 24px;
+      border-radius: 50%;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      line-height: 35px;
+    }
+
+    .btn:hover {
+      background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="notes"></div>
+  <input type="file" id="restoreFile" accept=".json">
+
+  <script>
+    let db;
+
+    // Ініціалізація IndexedDB
+    const request = indexedDB.open('NotesDB', 1);
+    request.onupgradeneeded = function (event) {
+      db = event.target.result;
+      db.createObjectStore('notes', { autoIncrement: true });
+    };
+    request.onsuccess = function (event) {
+      db = event.target.result;
+      loadNotesFromDB();
+    };
+
+    function saveNotesToDB() {
+      const tx = db.transaction('notes', 'readwrite');
+      const store = tx.objectStore('notes');
+      store.clear();
+      document.querySelectorAll('.note textarea').forEach(textarea => {
+        store.add({ text: textarea.value });
+      });
+    }
+
+    function loadNotesFromDB() {
+      const tx = db.transaction('notes', 'readonly');
+      const store = tx.objectStore('notes');
+      const request = store.getAll();
+      request.onsuccess = function () {
+        const notes = request.result;
+        if (notes.length > 0) {
+          notes.forEach(note => {
+            const el = createNote(note.text);
+            document.getElementById('notes').appendChild(el);
+          });
+        } else {
+          document.getElementById('notes').appendChild(createNote());
+        }
+      };
+    }
+
+    function createNote(text = '') {
+      const note = document.createElement('div');
+      note.className = 'note';
+
+      const textarea = document.createElement('textarea');
+      textarea.placeholder = '✍️ Додайте нову замітку...';
+      textarea.value = text;
+      textarea.addEventListener('input', saveNotesToDB);
+
+      textarea.addEventListener('focus', () => {
+      const rect = note.getBoundingClientRect();
+      const scrollTop = window.scrollY + rect.top - 20; // 20px від верхнього краю
+      window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+    });
+
+      const buttons = document.createElement('div');
+      buttons.className = 'note-buttons';
+
+      const backupBtn = document.createElement('div');
+      backupBtn.className = 'btn';
+      backupBtn.innerText = '📥';
+      backupBtn.title = 'Зберегти в JSON';
+      backupBtn.onclick = backupToJSON;
+
+      const restoreBtn = document.createElement('div');
+      restoreBtn.className = 'btn';
+      restoreBtn.innerText = '📤';
+      restoreBtn.title = 'Відновити з JSON';
+      restoreBtn.onclick = () => document.getElementById('restoreFile').click();
+
+      const addBtn = document.createElement('div');
+      addBtn.className = 'btn';
+      addBtn.innerText = '+';
+      addBtn.onclick = () => {
+      const newNote = createNote();
+      const notesContainer = document.getElementById('notes');
+      notesContainer.insertBefore(newNote, notesContainer.firstChild);
+      saveNotesToDB();
+     };
+
+      const deleteBtn = document.createElement('div');
+      deleteBtn.className = 'btn';
+      deleteBtn.innerText = '🗑';
+      deleteBtn.onclick = () => {
+        const notes = document.getElementById('notes');
+        if (notes.children.length > 1) {
+          if (confirm("Видалити замітку?")) {
+            note.remove();
+            saveNotesToDB();
+          }
+        } else {
+          alert("Не можна видаляти останню замітку!");
+        }
+      };
+
+      buttons.appendChild(backupBtn);
+      buttons.appendChild(restoreBtn);
+      buttons.appendChild(addBtn);
+      buttons.appendChild(deleteBtn);
+
+      note.appendChild(textarea);
+      note.appendChild(buttons);
+
+      return note;
+    }
+
+    function backupToJSON() {
+      const notes = [];
+      document.querySelectorAll('.note textarea').forEach(textarea => {
+        notes.push({ text: textarea.value });
+      });
+      const blob = new Blob([JSON.stringify(notes, null, 2)], { type: 'application/json' });
+      const timestamp = new Date().toISOString().replace(/[:]/g, "-").split(".")[0];
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Note2_Backup_${timestamp}.json`;
+      link.click();
+    }
+
+   document.getElementById('restoreFile').addEventListener('change', function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      const notesContainer = document.getElementById('notes');
+      notesContainer.innerHTML = '';
+
+      let extractedNotes = [];
+
+      // Перевіряємо формат
+      if (Array.isArray(data)) {
+        if (data.length > 0 && data[0].content) {
+          // Формат з content всередині
+          extractedNotes = data[0].content.map(item => ({ text: item.text }));
+        } else if (data[0].text) {
+          // Простий формат
+          extractedNotes = data;
+        }
+      }
+
+      extractedNotes.forEach(note => {
+        const el = createNote(note.text);
+        notesContainer.appendChild(el);
+      });
+
+      saveNotesToDB();
+    } catch (err) {
+      alert('Помилка під час завантаження файлу!');
+    }
+  };
+  reader.readAsText(file);
+});
+
+/*Установка как программа*/
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/magic-note-2/sw.js')
+    .then(() => console.log('SW зареєстрований'))
+    .catch(error => console.error('Помилка реєстрації SW:', error));
+}
+  </script>
+
+</body>
+</html>
