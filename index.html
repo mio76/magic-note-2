@@ -47,9 +47,7 @@
       resize: none;
       font-size: 22px;
       outline: none;
-      border-radius: var(--br);
-      /*backdrop-filter: blur(2px);
-      -webkit-backdrop-filter: blur(2px);*/
+      border-radius: var(--br);      
 
        overflow: hidden; /* 🚫 Відключаємо прокручування за замовчуванням */
        resize: none;
@@ -88,7 +86,7 @@
       border-radius: 50%;
       text-align: center;
       cursor: pointer;
-      line-height: 27px;
+      line-height: 28px;
       transition: background-color 0.3s;
     }
 
@@ -153,7 +151,26 @@
       const textarea = document.createElement('textarea');
       textarea.placeholder = '✍️ Додайте нову замітку...';
       textarea.value = text;
-      textarea.addEventListener('input', saveNotesToDB);
+
+      textarea.setAttribute('data-original', text);
+textarea.addEventListener('focus', () => {
+  // СЗберігаємо текст при фокусіе
+  textarea.setAttribute('data-original', textarea.value);
+});
+
+textarea.addEventListener('blur', () => {
+  const originalText = textarea.getAttribute('data-original');
+  const currentText = textarea.value;
+
+  if (originalText !== currentText) {
+    // Перемещаем заметку вверх
+    const notesContainer = document.getElementById('notes');
+    notesContainer.removeChild(note);
+    notesContainer.insertBefore(note, notesContainer.firstChild);
+
+    saveNotesToDB();
+  }
+});
 
       textarea.addEventListener('focus', () => {
       const rect = note.getBoundingClientRect();
